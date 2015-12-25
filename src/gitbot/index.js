@@ -1,6 +1,6 @@
 import Botkit from 'botkit';
 
-const cb = (err,res) => {
+const cb = (err, res) => {
   if (err) {
     console.log(err);
   }
@@ -26,7 +26,7 @@ class GitBot {
     this.gitBot = this.controller.spawn({
       token: this.GITBOT_SLACK_TOKEN,
       incoming_webhook: { url: this.GITBOT_WEBSERVER_HOOK_URL }
-    }).startRTM((err, bot, payload) => {
+    }).startRTM((err) => {
       if (err) { throw new Error('Could not connect to Slack'); }
     });
 
@@ -39,20 +39,18 @@ class GitBot {
     this.controller.hears(githubUsernamePattern, 'direct_message,direct_mention,mention', (bot, message) => {
       const match = message.text.match(new RegExp(githubUsernamePattern));
       const githubUsername = match.length ? match[1] : null;
-      const answer = githubUsername ? `Got it! It's , ${githubUsername} right?` : `Sorry I didn't get it. Could you use the following format ${githubUsernamePattern}`
+      const answer = githubUsername ? `Got it! It's , ${githubUsername} right?` : `Sorry I didn't get it. Could you use the following format ${githubUsernamePattern}`;
 
       bot.api.users.info({ user: message.user }, (err, res) => {
         user = res.user;
         bot.reply(message, answer);
       });
-
     });
   }
 
   setUpWebserver (port) {
-    this.controller.setupWebserver(port, (err,webserver) => {
-
-      webserver.get('/', (req,res) => {
+    this.controller.setupWebserver(port, (err, webserver) => {
+      webserver.get('/', (req, res) => {
         this.gitBot.sendWebhook({
           text: `This is an incoming webhook for ${user.id}`,
           channel: user.id,
