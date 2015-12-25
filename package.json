@@ -1,0 +1,30 @@
+{
+  "name": "jf",
+  "version": "1.0.0",
+  "description": "Greated buddy ever",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js --exec babel-node --presets es2015,stage-3",
+    "dev": "nodemon index.js --exec babel-node --presets es2015,stage-3",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/alkemics/bot-jf.git"
+  },
+  "author": "Alkemics <tech@alkemics.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alkemics/bot-jf/issues"
+  },
+  "homepage": "https://github.com/alkemics/bot-jf#readme",
+  "dependencies": {
+    "botkit": "0.0.4"
+  },
+  "devDependencies": {
+    "babel-cli": "6.3.17",
+    "babel-preset-es2015": "6.3.13",
+    "babel-preset-stage-3": "6.3.13",
+    "nodemon": "1.8.1"
+  }
+}
