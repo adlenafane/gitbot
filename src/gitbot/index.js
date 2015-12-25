@@ -7,8 +7,6 @@ const cb = (err, res) => {
   console.log(res);
 };
 
-let user = {};
-
 class GitBot {
 
   constructor (configuration) {
@@ -19,7 +17,7 @@ class GitBot {
     this.GITBOT_ICON_URL = process.env.GITBOT_ICON_URL || 'https://octodex.github.com/images/topguntocat.png';
     this.GITBOT_GITHUB_TOKEN = process.env.GITBOT_GITHUB_TOKEN;
     this.GITBOT_SLACK_TOKEN = process.env.GITBOT_SLACK_TOKEN;
-    this.GITBOT_WEBSERVER_PORT = process.env.GITBOT_WEBSERVER_PORT;
+    this.GITBOT_WEBSERVER_PORT = process.env.GITBOT_WEBSERVER_PORT || 8901;
     this.GITBOT_WEBSERVER_HOOK_URL = process.env.GITBOT_WEBSERVER_HOOK_URL;
 
     // connect the bot to a stream of messages
@@ -42,7 +40,11 @@ class GitBot {
       const answer = githubUsername ? `Got it! It's , ${githubUsername} right?` : `Sorry I didn't get it. Could you use the following format ${githubUsernamePattern}`;
 
       bot.api.users.info({ user: message.user }, (err, res) => {
-        user = res.user;
+        const user = res.user;
+        user.slackId = user.id;
+        user.id = githubUsername;
+
+        this.controller.storage.users.save(user, cb);
         bot.reply(message, answer);
       });
     });
@@ -51,15 +53,22 @@ class GitBot {
   setUpWebserver (port) {
     this.controller.setupWebserver(port, (err, webserver) => {
       webserver.get('/', (req, res) => {
-        this.gitBot.sendWebhook({
-          text: `This is an incoming webhook for ${user.id}`,
-          channel: user.id,
-          user: user.id,
-          username: this.GITBOT_USERNAME,
-          icon_url: this.GITBOT_ICON_URL
-        }, cb);
+        this.controller.storage.users.get('adlenafane', (redisErr, user) => {
+          if (redisErr) {
+            res.status(500).send(redisErr);
+            return;
+          }
 
-        res.send('ok');
+          this.gitBot.sendWebhook({
+            text: `This is an incoming webhook for ${user.real_name}`,
+            channel: user.slackId,
+            user: user.slackId,
+            username: this.GITBOT_USERNAME,
+            icon_url: this.GITBOT_ICON_URL
+          }, cb);
+
+          res.send('ok');
+        });
       });
     });
   }

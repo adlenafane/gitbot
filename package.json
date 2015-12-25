@@ -1,5 +1,5 @@
 {
-  "name": "gitbot",
+  "name": "@alkem/gitbot",
   "version": "1.0.0",
   "description": "Greatest buddy ever",
   "main": "index.js",
@@ -20,7 +20,9 @@
   },
   "homepage": "https://github.com/alkemics/bot-jf#readme",
   "dependencies": {
-    "botkit": "~0.0.4"
+    "botkit": "~0.0.4",
+    "jfs": "0.2.6",
+    "redis": "2.4.2"
   },
   "devDependencies": {
     "babel-cli": "~6.3.17",
