@@ -2,11 +2,13 @@
   "name": "@alkem/gitbot",
   "version": "1.0.0",
   "description": "Greatest buddy ever",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "nodemon index.js --exec babel-node --presets es2015,stage-3",
-    "dev": "nodemon index.js --exec babel-node --presets es2015,stage-3",
+    "compile": "./node_modules/.bin/babel src --out-dir dist  --presets es2015,stage-3",
+    "dev": "nodemon src/index.js --exec babel-node --presets es2015,stage-3",
     "lint": "./node_modules/.bin/eslint ./src/**/*.js",
+    "prepublish": "npm run compile",
+    "start": "nodemon src/index.js --exec babel-node --presets es2015,stage-3",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,9 +18,9 @@
   "author": "Alkemics <tech@alkemics.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/alkemics/bot-jf/issues"
+    "url": "https://github.com/alkemics/gitbot/issues"
   },
-  "homepage": "https://github.com/alkemics/bot-jf#readme",
+  "homepage": "https://github.com/alkemics/gitbot#readme",
   "dependencies": {
     "botkit": "~0.0.4",
     "jfs": "0.2.6",
