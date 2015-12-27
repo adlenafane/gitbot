@@ -1,4 +1,6 @@
 import Botkit from 'botkit';
+import express from 'express';
+import bodyParser from 'body-parser';
 
 const cb = (err, res) => {
   if (err) {
@@ -51,26 +53,78 @@ class GitBot {
   }
 
   setUpWebserver (port) {
-    this.controller.setupWebserver(port, (err, webserver) => {
-      webserver.get('/', (req, res) => {
-        this.controller.storage.users.get('adlenafane', (redisErr, user) => {
-          if (redisErr) {
-            res.status(500).send(redisErr);
-            return;
-          }
+    const app = express();
+    app.use(bodyParser.json());
 
-          this.gitBot.sendWebhook({
-            text: `This is an incoming webhook for ${user.real_name}`,
-            channel: user.slackId,
-            user: user.slackId,
-            username: this.GITBOT_USERNAME,
-            icon_url: this.GITBOT_ICON_URL
-          }, cb);
+    app.get('/gitbot/v1/platform/ping', this.ping);
+    app.post('/gitbot/v1/event', this.extractGithubData, this.handleGithubEvent.bind(this));
 
-          res.send('ok');
-        });
-      });
+    app.listen(port, () => {
+      console.log(`Gitbot listening on port ${port}`);
     });
+  }
+
+  ping (req, res) {
+    return res.sendStatus(200);
+  }
+
+  handleGithubEvent (req, res) {
+    const data = req.body.payload ? JSON.parse(req.body.payload) : req.body;
+    const prDisplayableText = `<${req.prUrl}|[${req.prRepositoryName}] ${req.prTitle}>`;
+    let text = `You should not see this, please forward to aa@alkemics.com. ${JSON.stringify(req)}`;
+    let recipient = {};
+
+    // Valid types `commit_comment` `pull_request_review_comment` `pull_request`
+    if (req.githubEventType === `pull_request` && (['assigned', 'opened', 'reopened'].indexOf(data.action) > -1)) {
+      text = `A PR ${prDisplayableText} has been assigned to you by ${req.prSender}`;
+      recipient = req.prAssignee;
+    } else if (['pull_request_review_comment', 'commit_comment'].indexOf(req.githubEventType) > -1) {
+      text = `The PR ${prDisplayableText} has been commented by ${req.prCommenter}`;
+
+      if (req.prAssignee !== req.prCommenter) {
+        recipient = req.prAssignee;
+      }
+    }
+
+    res.send('ok');
+
+    this.controller.storage.users.get(recipient, (redisErr, redisUser) => {
+      if (redisErr) {
+        res.status(500).send(redisErr);
+        return;
+      }
+
+      const user = redisUser || {};
+      this.say(user, text, cb);
+    });
+  }
+
+  extractGithubData (req, res, next) {
+    const data = req.body.payload ? JSON.parse(req.body.payload) : req.body;
+    req.githubEventType = req.get('X-GitHub-Event');
+
+    if (data.pull_request) {
+      req.prTitle = data.pull_request.title;
+      req.prUrl = data.pull_request.html_url;
+      req.prOpener = data.pull_request.user.login;
+
+      req.prAssignee = data.pull_request.assignee ? data.pull_request.assignee.login : undefined;
+    }
+    req.prRepositoryName = data.repository ? data.repository.name : undefined;
+    req.prCommenter = data.comment ? data.comment.user.login : undefined;
+    req.prSender = data.sender ? data.sender.login : undefined;
+
+    next();
+  }
+
+  say (user, text, next) {
+    this.gitBot.sendWebhook({
+      text: text,
+      channel: user.slackId,
+      user: user.slackId,
+      username: this.GITBOT_USERNAME,
+      icon_url: this.GITBOT_ICON_URL
+    }, next);
   }
 }
 
