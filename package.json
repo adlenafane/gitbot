@@ -1,6 +1,6 @@
 {
   "name": "@alkem/gitbot",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Greatest buddy ever",
   "main": "dist/index.js",
   "scripts": {
@@ -22,8 +22,9 @@
   },
   "homepage": "https://github.com/alkemics/gitbot#readme",
   "dependencies": {
+    "body-parser": "1.14.2",
     "botkit": "~0.0.4",
-    "jfs": "0.2.6",
+    "express": "4.13.3",
     "redis": "2.4.2"
   },
   "devDependencies": {
