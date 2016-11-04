@@ -17,17 +17,20 @@ class GitBot {
 
     this.GITBOT_USERNAME = process.env.GITBOT_USERNAME || 'JF';
     this.GITBOT_ICON_URL = process.env.GITBOT_ICON_URL || 'https://octodex.github.com/images/topguntocat.png';
-    this.GITBOT_GITHUB_TOKEN = process.env.GITBOT_GITHUB_TOKEN;
-    this.GITBOT_SLACK_TOKEN = process.env.GITBOT_SLACK_TOKEN;
+    this.GITBOT_GITHUB_TOKEN = process.env.GITBOT_GITHUB_TOKEN || configuration.GITBOT_GITHUB_TOKEN;
+    this.GITBOT_SLACK_TOKEN = process.env.GITBOT_SLACK_TOKEN || configuration.GITBOT_SLACK_TOKEN;
     this.GITBOT_WEBSERVER_PORT = process.env.GITBOT_WEBSERVER_PORT || 8901;
-    this.GITBOT_WEBSERVER_HOOK_URL = process.env.GITBOT_WEBSERVER_HOOK_URL;
+    this.GITBOT_WEBSERVER_HOOK_URL = process.env.GITBOT_WEBSERVER_HOOK_URL || configuration.GITBOT_WEBSERVER_HOOK_URL;
 
     // connect the bot to a stream of messages
     this.gitBot = this.controller.spawn({
       token: this.GITBOT_SLACK_TOKEN,
-      incoming_webhook: { url: this.GITBOT_WEBSERVER_HOOK_URL }
+      incoming_webhook: {
+        configuration_url: this.GITBOT_WEBSERVER_HOOK_URL,
+        url: this.GITBOT_WEBSERVER_HOOK_URL
+      }
     }).startRTM((err) => {
-      if (err) { throw new Error('Could not connect to Slack'); }
+      if (err) { throw new Error(`Could not connect to Slack due to: ${err}`); }
     });
 
     this.setUp();
@@ -69,12 +72,14 @@ class GitBot {
   }
 
   handleGithubEvent (req, res) {
-    const data = req.body.payload ? JSON.parse(req.body.payload) : req.body;
+    const data = req.data;
+    if(!data) return res.send('ok');
+
     const prDisplayableText = `<${req.prUrl}|[${req.prRepositoryName}] ${req.prTitle}>`;
-    let text = `You should not see this, please forward to aa@alkemics.com. ${JSON.stringify(req)}`;
+    let text = `An error occured, please forward to aa@alkemics.com. ${JSON.stringify(data)}`;
     let recipient = {};
 
-    // Valid types `commit_comment` `pull_request_review_comment` `pull_request`
+    // Valid types: `commit_comment`, `pull_request`, `pull_request_review_comment`
     if (req.githubEventType === `pull_request` && (['assigned', 'opened', 'reopened'].indexOf(data.action) > -1)) {
       text = `A PR ${prDisplayableText} has been assigned to you by ${req.prSender}`;
       recipient = req.prAssignee;
@@ -84,6 +89,11 @@ class GitBot {
       if (req.prAssignee !== req.prCommenter) {
         recipient = req.prAssignee;
       }
+    } else if (req.githubEventType === `pull_request_review`) {
+      text = `${req.reviewer} has ${req.reviewState} your PR ${req.prTitle}`;
+      recipient = req.prOpener;
+    } else {
+      recipient = 'adlenafane';
     }
 
     res.send('ok');
@@ -100,7 +110,10 @@ class GitBot {
   }
 
   extractGithubData (req, res, next) {
-    const data = req.body.payload ? JSON.parse(req.body.payload) : req.body;
+    const payload = typeof req.body.payload === 'string' ?
+      JSON.parse(req.body.payload) : req.body.payload;
+    const data = payload || req.body;
+    req.data = data;
     req.githubEventType = req.get('X-GitHub-Event');
 
     if (data.pull_request) {
@@ -109,6 +122,11 @@ class GitBot {
       req.prOpener = data.pull_request.user.login;
 
       req.prAssignee = data.pull_request.assignee ? data.pull_request.assignee.login : undefined;
+      req.prAssignees = data.pull_request.assignees ? data.pull_request.assignees.map(a => a.login) : undefined;
+    }
+    if (data.review) {
+      req.reviewer = data.review.user ? data.review.user.login : '';
+      req.reviewState = data.review.state;
     }
     req.prRepositoryName = data.repository ? data.repository.name : undefined;
     req.prCommenter = data.comment ? data.comment.user.login : undefined;

@@ -1,0 +1,5 @@
+--timeout 5000
+--compilers js:babel-core/register
+--require tests/env
+--require tests/chai
+tests/**/*.spec.js

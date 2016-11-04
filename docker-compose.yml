@@ -1,0 +1,17 @@
+redis:
+  image: alkemics/redis
+  ports:
+    - "6379:6379"
+
+gitbot:
+  working_dir: /usr/src/gitbot/src
+  image: alkemics/gitbot
+  env_file:
+    - .env
+  volumes:
+    - ./src:/usr/src/gitbot/src
+  command: npm start
+  links:
+   - redis
+  ports:
+    - "8901:8901"

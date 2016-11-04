@@ -7,20 +7,21 @@
     "compile": "./node_modules/.bin/babel src --out-dir dist  --presets es2015,stage-3",
     "dev": "nodemon src/index.js --exec babel-node --presets es2015,stage-3",
     "lint": "./node_modules/.bin/eslint ./src/**/*.js",
+    "mocha": "BABEL_ENV=test NODE_PATH=\"$PWD:$PWD/src\" mocha --opts mocha.opts",
     "prepublish": "npm run compile",
     "start": "nodemon src/index.js --exec babel-node --presets es2015,stage-3",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run lint && npm run mocha"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/alkemics/gitbot.git"
+    "url": "git+ssh://git@github.com/adlenafane/gitbot.git"
   },
-  "author": "Alkemics <tech@alkemics.com>",
+  "author": "Adlen Afane <adlen.afane@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/alkemics/gitbot/issues"
+    "url": "https://github.com/adlenafane/gitbot/issues"
   },
-  "homepage": "https://github.com/alkemics/gitbot#readme",
+  "homepage": "https://github.com/adlenafane/gitbot#readme",
   "dependencies": {
     "body-parser": "1.14.2",
     "botkit": "~0.0.4",
@@ -32,9 +33,16 @@
     "babel-eslint": "^4.1.6",
     "babel-preset-es2015": "~6.3.13",
     "babel-preset-stage-3": "~6.3.13",
+    "chai": "~3.5.0",
+    "dirty-chai": "~1.2.2",
+    "dotenv": "~2.0.0",
     "eslint": "^1.10.3",
     "eslint-config-airbnb": "^1.0.0",
     "eslint-plugin-react": "3.13.0",
-    "nodemon": "~1.8.1"
+    "mocha": "~3.1.2",
+    "nodemon": "~1.8.1",
+    "path": "~0.12.7",
+    "sinon": "~1.17.6",
+    "sinon-chai": "~2.8.0"
   }
 }
